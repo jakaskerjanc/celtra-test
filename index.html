@@ -36,14 +36,23 @@
         step="1"
         color="green"
         value="150"
-        label="Demo z dolgim imenom"
+        label="Tretji slider"
       ></c-slider>
     </c-slider-container>
 
     <div class="demo-panel">
-      <input id="input" type="number" />
-      <button onclick="addSlider()">Add random slider</button>
-      <button onclick="removeSlider()">Remove slider</button>
+      Demo slider 1 control:
+      <input
+        id="input"
+        type="number"
+        label="Slider 1 control"
+        style="width: 20%"
+      />
+
+      <div style="padding-top: 0.5rem">
+        <button onclick="addSlider()">Add random slider</button>
+        <button onclick="removeSlider()">Remove slider</button>
+      </div>
     </div>
   </body>
 </html>
@@ -60,5 +69,6 @@
 
   .demo-panel {
     padding: 1rem;
+    width: fit-content;
   }
 </style>

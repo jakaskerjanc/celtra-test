@@ -37,7 +37,6 @@ template.innerHTML = `
 class SliderContainer extends HTMLElement {
   constructor() {
     super();
-    console.log("SliderContainer constructor");
 
     const shadowRoot = this.attachShadow({ mode: "open" });
     shadowRoot.appendChild(template.content.cloneNode(true));
@@ -49,8 +48,6 @@ class SliderContainer extends HTMLElement {
   }
 
   connectedCallback() {
-    console.log("SliderContainer connectedCallback");
-
     if (!this.hasAttribute("radius"))
       console.log("SliderContainer - Radius is required!");
 
@@ -66,16 +63,7 @@ class SliderContainer extends HTMLElement {
   }
 
   disconnectedCallback() {
-    console.log("SliderContainer disconnectedCallback");
     this.observer.disconnect();
-  }
-
-  adoptedCallback() {
-    console.log("SliderContainer adoptedCallback");
-  }
-
-  attributeChangedCallback() {
-    console.log("SliderContainer attributeChangedCallback");
   }
 
   childListMutation(mutationsList, observer) {
@@ -102,13 +90,13 @@ class SliderContainer extends HTMLElement {
   }
 
   updateChildrenRadius() {
-    let __radius = parseInt(this.radius);
+    let radius = parseInt(this.radius);
 
     this.svgContainer.innerHTML = "";
 
     this.sliderSet.forEach((slider) => {
-      slider.radius = __radius;
-      __radius += 35;
+      slider.radius = radius;
+      radius += 35;
       slider.createSliderSvg();
       slider.updateContainerWidth();
     });
