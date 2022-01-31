@@ -1,16 +1,15 @@
 class Slider extends HTMLElement {
   constructor() {
     super();
-    console.log("Slider constructor");
   }
 
   connectedCallback() {
-    console.log("Slider connectedCallback");
-
+    //Check if c-slider-container is parent
     if (!Slider.checkNodeOfType(this.parentElement, "c-slider-container")) {
       console.log("c-slider must be used in c-slider-container");
     }
 
+    //Get attributes
     this.color = this.hasAttribute("color")
       ? this.getAttribute("color")
       : "red";
@@ -31,56 +30,128 @@ class Slider extends HTMLElement {
       : 1;
     this.value = this.hasAttribute("value")
       ? parseInt(this.getAttribute("value"))
-      : 0;
+      : this.min;
+
+    //Check if we get valid numbers
+    if (this.max < this.min) {
+      console.log(
+        "Invalid min and max values: max smaller than min, reset to default"
+      );
+      this.max = 100;
+      this.min = 1;
+      this.setAttribute("min", this.min);
+      this.setAttribute("max", this.max);
+    }
+    if (this.min < 0) {
+      this.min = 0;
+      this.setAttribute("min", this.min);
+    }
+    if (this.value < this.min) {
+      this.value = this.min;
+      this.setAttribute("value", this.value);
+    }
+    if (this.value > this.max) {
+      this.value = this.max;
+      this.setAttribute("value", this.value);
+    }
+
+    //Check if starting value matches step
+    let ceiledValue = Math.ceil(this.value / this.step) * this.step;
+    if (this.value != ceiledValue) {
+      this.value = ceiledValue;
+      this.setAttribute("value", ceiledValue);
+    }
+
+    this.valueRange = this.max - this.min;
+
+    //We need to save parentElement for use in disconnectedCallback
+    this.parent = this.parentElement;
 
     this.parentElement.legendContainer.appendChild(this.createLegend());
   }
 
+  attributeChangedCallback(name, oldValue, newValue) {
+    if (name != "value" || oldValue == null || oldValue == newValue) return;
+
+    let newValueInt = parseInt(newValue);
+
+    if (newValueInt > this.max) {
+      this.setAttribute("value", this.max);
+      return;
+    }
+    if (newValueInt < this.min) {
+      this.setAttribute("value", this.min);
+      return;
+    }
+    //Check if value matches step
+    let ceiledValue = Math.ceil(newValueInt / this.step) * this.step;
+    if (newValueInt != ceiledValue) {
+      this.setAttribute("value", ceiledValue);
+      return;
+    }
+
+    this.value = newValueInt;
+
+    if (!this.colorCircle || !this.btnCircle || !this.legendElementNumber)
+      return;
+
+    this.updateColorCircle();
+    this.updateBtnCircle();
+
+    this.legendElementNumber.innerText = "$" + this.value;
+  }
+
+  static get observedAttributes() {
+    return ["value"];
+  }
+
   disconnectedCallback() {
-    console.log("Slider disconnectedCallback");
-
-    this.group = null;
-  }
-
-  adoptedCallback() {
-    console.log("Slider adoptedCallback");
-  }
-
-  attributeChangedCallback() {
-    console.log("Slider attributeChangedCallback");
+    //Remove legend if slider is removed
+    this.parent.legendContainer.removeChild(this.legendElement);
   }
 
   static checkNodeOfType(node, name) {
     return node.nodeName.toLowerCase() == name.toLowerCase();
   }
 
-  createSliderSvg() {
-    this.calcAngle();
-    this.calcOffset();
-
-    let dashCircle = document.createElementNS(
+  createDashCircle() {
+    this.dashCircle = document.createElementNS(
       "http://www.w3.org/2000/svg",
       "circle"
     );
-    dashCircle.setAttribute("r", this.radius);
-    dashCircle.setAttribute("fill", "none");
-    dashCircle.setAttribute("stroke", "grey");
-    dashCircle.setAttribute("stroke-width", "20");
-    dashCircle.setAttribute("stroke-dasharray", "5");
-    dashCircle.setAttribute("cx", "50%");
-    dashCircle.setAttribute("cy", "50%");
+    this.dashCircle.setAttribute("r", this.radius);
+    this.dashCircle.setAttribute("fill", "none");
+    this.dashCircle.setAttribute("stroke", "grey");
+    this.dashCircle.setAttribute("stroke-width", "20");
+    this.dashCircle.setAttribute("cx", "50%");
+    this.dashCircle.setAttribute("cy", "50%");
+    this.dashCircle.setAttribute("transform", "rotate(-90)");
+    this.dashCircle.setAttribute("transform-origin", "50% 50%");
 
-    let eventCircle = document.createElementNS(
+    let dashSpacing =
+      (this.radius * 3.14 * 2) / (this.valueRange / this.step) - 2;
+
+    //Limit dash spacing
+    dashSpacing = dashSpacing < 3 ? 3 : dashSpacing;
+    this.dashCircle.setAttribute("stroke-dasharray", dashSpacing + " 2");
+  }
+
+  //Transparent Circle only used to get click event
+  //If we click between tick event would not register
+  createEventCircle() {
+    this.eventCircle = document.createElementNS(
       "http://www.w3.org/2000/svg",
       "circle"
     );
-    eventCircle.setAttribute("r", this.radius);
-    eventCircle.setAttribute("fill", "none");
-    eventCircle.setAttribute("stroke", "rgba(0,0,0,0)");
-    eventCircle.setAttribute("stroke-width", "20");
-    eventCircle.setAttribute("cx", "50%");
-    eventCircle.setAttribute("cy", "50%");
+    this.eventCircle.setAttribute("r", this.radius);
+    this.eventCircle.setAttribute("fill", "none");
+    this.eventCircle.setAttribute("stroke", "rgba(0,0,0,0)");
+    this.eventCircle.setAttribute("stroke-width", "20");
+    this.eventCircle.setAttribute("cx", "50%");
+    this.eventCircle.setAttribute("cy", "50%");
+  }
 
+  createColorCircle() {
     this.colorCircle = document.createElementNS(
       "http://www.w3.org/2000/svg",
       "circle"
@@ -92,14 +163,15 @@ class Slider extends HTMLElement {
     this.colorCircle.setAttribute("opacity", "0.7");
     this.colorCircle.setAttribute("cx", "50%");
     this.colorCircle.setAttribute("cy", "50%");
+    //Rotate so we start at the top
     this.colorCircle.setAttribute("transform", "rotate(-90)");
+    //Rotate around center of <svg>
     this.colorCircle.setAttribute("transform-origin", "50% 50%");
 
-    this.colorCircle.setAttribute(
-      "stroke-dasharray",
-      `${this.offset} ${this.radius * 3.141 * 2}`
-    );
+    this.updateColorCircle();
+  }
 
+  createBtnCircle() {
     this.btnCircle = document.createElementNS(
       "http://www.w3.org/2000/svg",
       "circle"
@@ -108,20 +180,34 @@ class Slider extends HTMLElement {
     this.btnCircle.setAttribute("fill", "white");
     this.btnCircle.setAttribute("stroke", "grey");
     this.btnCircle.setAttribute("stroke-width", "1");
-    this.btnCircle.setAttribute("transform", `rotate(${this.angle})`);
+    //Change rotation center to middle of <svg>
     this.btnCircle.setAttribute("transform-origin", "50% 50%");
+    //Center button to middle of <svg>
     this.btnCircle.style.cx = `50%`;
     this.btnCircle.style.cy = `calc(50% - ${this.radius}px)`;
 
+    this.updateBtnCircle();
+  }
+
+  createSliderSvg() {
+    this.createDashCircle();
+    this.createEventCircle();
+    this.createColorCircle();
+    this.createBtnCircle();
+
     this.group = document.createElementNS("http://www.w3.org/2000/svg", "g");
 
-    this.group.appendChild(dashCircle);
-    this.group.appendChild(eventCircle);
+    this.group.appendChild(this.dashCircle);
+    this.group.appendChild(this.eventCircle);
     this.group.appendChild(this.colorCircle);
     this.group.appendChild(this.btnCircle);
 
     this.group.addEventListener("mousedown", this.clickEvent.bind(this));
+    this.group.addEventListener("touchstart", this.clickEvent.bind(this));
+    this.group.addEventListener("touchmove", this.clickEvent.bind(this));
+
     document.addEventListener("mouseup", this.clickEventUp.bind(this));
+    document.addEventListener("touchend", this.clickEventUp.bind(this));
     document.addEventListener("mousemove", this.clickEventMove.bind(this));
 
     this.parentElement.shadowRoot
@@ -129,6 +215,24 @@ class Slider extends HTMLElement {
       .appendChild(this.group);
   }
 
+  //Calculate stroke-dasharray for colored circle
+  updateColorCircle() {
+    let offset =
+      this.radius * 3.141 * 2 * ((this.value - this.min) / this.valueRange);
+
+    this.colorCircle.setAttribute(
+      "stroke-dasharray",
+      `${offset} ${this.radius * 3.141 * 2}`
+    );
+  }
+
+  //Calculate angle for button rotation
+  updateBtnCircle() {
+    let angle = 360 * ((this.value - this.min) / this.valueRange);
+    this.btnCircle.setAttribute("transform", `rotate(${angle})`);
+  }
+
+  //Expand container to match slider size
   updateContainerWidth() {
     let sliderWidth = 2 * this.radius + 50;
     this.parentElement.svgContainer.setAttribute("height", sliderWidth);
@@ -148,60 +252,62 @@ class Slider extends HTMLElement {
 
     event.preventDefault();
 
-    let x = event.clientX;
-    let y = event.clientY;
+    //Mouse click vs touch
+    let eventX = event.clientX ? event.clientX : event.touches[0].clientX;
+    let eventY = event.clientY ? event.clientY : event.touches[0].clientY;
 
+    //Get <svg> center from top corner and size
     let dimensions = this.parentElement.svgContainer.getBoundingClientRect();
-    let cx = dimensions.left + dimensions.width / 2;
-    let cy = dimensions.top + dimensions.height / 2;
+    let centerX = dimensions.left + dimensions.width / 2;
+    let centerY = dimensions.top + dimensions.height / 2;
 
-    let dx = x - cx;
-    let dy = y - cy;
-    // returns angle in degrees. + 90 is added to rotate coordinate system
-    // so 0deg angle is at the top of the circle.
-    let angle = (Math.atan2(dy, dx) * 180) / Math.PI + 90;
+    let distX = eventX - centerX;
+    let distY = eventY - centerY;
+
+    let angle = (Math.atan2(distY, distX) * 180) / Math.PI + 90;
     if (angle < 0) {
       angle += 360;
     }
 
-    this.angle = angle;
-    this.value = Math.round(this.min + (this.max - this.min) * (angle / 360));
-    this.setAttribute("value", this.value);
-    this.btnCircle.setAttribute("transform", `rotate(${this.angle})`);
-    this.calcOffset();
-    this.colorCircle.setAttribute(
-      "stroke-dasharray",
-      `${this.offset} ${this.radius * 3.141 * 2}`
-    );
-    this.legendNumberElement.innerText = this.value;
-  }
+    let value;
 
-  calcOffset() {
-    this.offset =
-      this.radius * 3.141 * 2 * (this.value / this.max - this.min + 1);
-  }
-  calcAngle() {
-    this.angle = 360 * (this.value / this.max - this.min + 1);
+    //Snapping to min, max value if we are close to 0,
+    //so we don't get jumping from min to max
+    if (angle < 5) {
+      value = this.min;
+      angle = 0;
+    } else if (angle > 355) {
+      value = this.max;
+      angle = 360;
+    } else {
+      //Calculate new value from angle
+      value = Math.round(this.min + this.valueRange * (angle / 360));
+      //Calculate value for step
+      value = Math.ceil(value / this.step) * this.step;
+    }
+
+    this.setAttribute("value", value);
   }
 
   createLegend() {
     let div = document.createElement("div");
-    let h = document.createElement("h3");
+    let h = document.createElement("h1");
     let color = document.createElement("div");
     let text = document.createElement("span");
     div.appendChild(h);
     div.appendChild(color);
     div.appendChild(text);
-    h.innerText = this.value;
+    h.innerText = "$" + this.value;
     text.innerText = this.label;
-    div.style.display = "flex";
-    div.style.alignItems = "center";
+
+    color.classList.add("color-div");
+    text.classList.add("legend-text");
 
     color.style.backgroundColor = this.color;
-    color.style.width = "20px";
-    color.style.height = "20px";
 
-    this.legendNumberElement = h;
+    //Save element for updating number and to remove on disconnect
+    this.legendElementNumber = h;
+    this.legendElement = div;
 
     return div;
   }

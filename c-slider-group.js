@@ -1,19 +1,37 @@
 const template = document.createElement("template");
 template.innerHTML = `
-
-<style>
-.outer{
-  width: fit-content;
-  height: fit-content;
-  display: flex;
-}
-</style>
 <div class="outer">
   <div id="legend-container">
   </div>
   <svg id="svg-container">
   </svg>
 </div>
+<style>
+  .outer{
+    display: flex;
+    flex-wrap: wrap-reverse;
+    align-items: center;    
+    justify-content: center;
+    background: linear-gradient(0deg, rgba(187, 187, 187, 1) 0%, rgba(221, 221, 221, 1) 59%);
+  }
+   #legend-container>div{
+    display: grid;
+    grid-template-columns: 9rem 3rem auto;
+    align-items: center;
+  }
+  #legend-container h1{
+    font-size: 3rem;
+    margin: 0 0 0 1rem;
+  }
+  #legend-container .color-div{
+    margin: 0 0.5rem;
+    width: 20px;
+    height: 15px;
+  }
+  #legend-container .legend-text{
+    font-family: Arial, sans-serif;
+  }
+</style>
 `;
 
 class SliderContainer extends HTMLElement {
@@ -21,7 +39,6 @@ class SliderContainer extends HTMLElement {
     super();
     console.log("SliderContainer constructor");
 
-    //initiate shadow DOM and append template
     const shadowRoot = this.attachShadow({ mode: "open" });
     shadowRoot.appendChild(template.content.cloneNode(true));
 

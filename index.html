@@ -8,37 +8,36 @@
     <link rel="stylesheet" href="styles.css" />
     <script src="c-slider-group.js"></script>
     <script src="c-slider.js"></script>
+    <script defer src="demo-script.js"></script>
   </head>
   <body>
-    <c-slider-container radius="100" style="background-color: aquamarine">
+    <h1 class="title">Slider demo</h1>
+    <c-slider-container radius="100" id="slider-container">
       <c-slider
-        slot="slider"
-        min="1"
-        max="50"
+        id="slider1"
+        min="100"
+        max="200"
         step="1"
         color="red"
-        value="25"
-        label="slider1"
+        value="150"
+        label="Demo"
       ></c-slider>
       <c-slider
-        slot="slider"
+        id="slider2"
         min="1"
-        max="100"
-        step="1"
-        color="blue"
-        value="70"
-        label="Neki pametnega"
-      ></c-slider>
-      <c-slider
-        slot="slider"
-        min="1"
-        max="100"
-        step="1"
-        color="blue"
-        value="50"
-        label="slider1"
+        max="1000"
+        step="100"
+        color="lightblue"
+        value="150"
+        label="Demo z dolgim imenom"
       ></c-slider>
     </c-slider-container>
+
+    <div class="demo-panel">
+      <input id="input" type="number" />
+      <button onclick="addSlider()">Add random slider</button>
+      <button onclick="removeSlider()">Remove slider</button>
+    </div>
   </body>
 </html>
 
@@ -47,7 +46,12 @@
     margin: 0;
     height: 100vh;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
+  }
+
+  .demo-panel {
+    padding: 1rem;
   }
 </style>
