@@ -283,7 +283,7 @@ class Slider extends HTMLElement {
       //Calculate new value from angle
       value = Math.round(this.min + this.valueRange * (angle / 360));
       //Calculate value for step
-      value = Math.ceil(value / this.step) * this.step;
+      value = Math.round(value / this.step) * this.step;
     }
 
     this.setAttribute("value", value);
