@@ -1,6 +1,6 @@
 # Circular slider
 
-[Live demo here (jky-btw.github.io)](https://jky-btw.github.io/celtra-test/)
+[Live demo here (jakaskerjanc.github.io/celtra-test)](https://jakaskerjanc.github.io/celtra-test/)
 
 ## Slider container
 
